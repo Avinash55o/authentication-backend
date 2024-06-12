@@ -3,6 +3,8 @@ import { User } from "./db"
 import passport from "./passport-config";
 import { Request,Response } from "express";
 import jwt from "jsonwebtoken";
+import bcrypt from 'bcryptjs';
+
 const router=express.Router();
 
 declare module 'express-session' {
@@ -10,6 +12,7 @@ declare module 'express-session' {
     signup?: boolean;
   }
 }
+
 
 // Login route
 router.get(
@@ -59,7 +62,7 @@ router.get(
 
 
 
-
+//NORMAL SI
 router.post("/sign",async(req:Request,res:Response)=>{
  const existinguser=await User.findOne({
   userName:req.body.userName
@@ -71,6 +74,7 @@ if(existinguser){
 
 const creatUser=await User.create({
   userName:req.body.userName,
+  email:req.body.email,
   password:req.body.password
 })
 const userId=creatUser._id;
@@ -78,6 +82,8 @@ return res.status(200).json({message:"account created"})
 
 })
 
+
+// NORMAL LOGIN ROUTER
 router.post("/login" ,async(req,res)=>{
   const existinguser=await User.findOne({
     userName:req.body.userName
@@ -108,20 +114,28 @@ router.post("/login" ,async(req,res)=>{
 
 
 
-// router.put("/update-pass",async(req,res)=>{
-//   const{currentPassword,newpassword}=req.body
-
-//   if(!currentPassword||!newpassword){
-//     return res.status(400).send("current and new assword are required");
-//   };
 
 
-//   const User=await user.findById(req.body.password._id) 
-//   if(!User){
-//     return res.send("user not fond");
-//   };
+router.put("/update-pass",async(req:Request,res:Response)=>{
+  const{userName,newpassword}=req.body
 
-// })
+  if(!userName||!newpassword){
+    return res.status(400).send("userName and new assword are required");
+  }
+
+
+  const user=await User.findOne({userName}) 
+  if(!user){
+    return res.status(400).send("username not found");
+  }
+  
+  const HashPassword=await bcrypt.hash(newpassword,10);
+
+  user.password=HashPassword;
+  await user.save();
+  
+  return res.status(200).json({password:HashPassword,message:"password changed"});
+});
 
 
 

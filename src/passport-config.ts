@@ -80,6 +80,7 @@ passport.use('google-signup',
             googleId: profile.id,
             userName: profile.displayName,
             email: profile.emails[0].value,
+            password:"",
           });
           await newUser.save();
           req.session.signup = false; // Clear signup flag
