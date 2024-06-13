@@ -2,6 +2,7 @@ import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth2";
 import { User } from "./db";
 import { Request } from "express";
+import jwt from "jsonwebtoken";
 
 declare module 'express-session' {
   interface Session {
@@ -45,9 +46,12 @@ passport.use('google-login',
     
         if (user) {
           return done(null, user);
+         
         } else {
           return done(null, false);
         }
+ 
+
       } catch (err) {
         return done(err, false);
       }
@@ -83,7 +87,7 @@ passport.use('google-signup',
             password:"",
           });
           await newUser.save();
-          req.session.signup = false; // Clear signup flag
+          req.session.signup = false;
           return done(null, newUser);
         } else {
           return done(null, false);

@@ -13,6 +13,14 @@ declare module 'express-session' {
   }
 }
 
+interface IUser {
+  email?: string;
+  userName?: string;
+  googleId?: string;
+  password?: string;
+  displayName?: string;
+}
+
 
 // Login route
 router.get(
@@ -20,12 +28,17 @@ router.get(
   passport.authenticate("google-login", { scope: ["profile", "email"] })
 );
 
+function isUser(user: any): user is IUser {
+  return user && typeof user.userName === 'string';
+}
+
 router.get(
   "/auth/google/callback",
   passport.authenticate("google-login", { failureRedirect: "http://localhost:5173" }),
   (req, res) => {
-    if (req.user) {
-      res.redirect("http://localhost:5173/dashboard");
+   
+    if (isUser(req.user) && req.user.userName) {
+      res.redirect(`http://localhost:5173/dashboard?username=${encodeURIComponent(req.user.userName)}`);
     } else {
       res.redirect("http://localhost:5173");
     }
@@ -46,9 +59,10 @@ router.get(
 router.get(
   "/auth/google/signup/callback",
   passport.authenticate("google-signup", { failureRedirect: "http://localhost:5173" }),
-  (req, res) => {
+  (req, res,profile:any) => {
     if (req.user) {
-      res.redirect("http://localhost:5173/dashboard");
+      
+      res.redirect(`http://localhost:5173/dashboard?username=${encodeURIComponent(profile.userName)}`);
     } else {
       res.redirect("http://localhost:5173");
     }
@@ -106,7 +120,8 @@ router.post("/login" ,async(req,res)=>{
   };
 
 
-  const token=jwt.sign({userId:check._id},"token")
+  const token=jwt.sign({username:check.userName},"token")
+
   return res.json({message:"login to page",
     token:token
   })
@@ -136,6 +151,22 @@ router.put("/update-pass",async(req:Request,res:Response)=>{
   
   return res.status(200).json({password:HashPassword,message:"password changed"});
 });
+
+
+router.get("/profile/:userName",async(req:Request,res:Response)=>{
+  const {userName}=req.params;
+
+  const user= await User.findOne({userName})
+
+  if(user){
+    res.json(user);
+  }else{
+    res.status(404).json({message:"profile not found"})
+  }
+
+
+
+})
 
 
 
